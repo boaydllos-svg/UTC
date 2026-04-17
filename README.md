@@ -18,20 +18,20 @@
 以下命令都在仓库根目录执行：
 
 ```bash
-python diary.py add --title "今天" 今天天气很好
-python diary.py list
-python diary.py view 1
-python diary.py delete 1
+python3 diary.py add --title "今天" 今天天气很好
+python3 diary.py list
+python3 diary.py view 1
+python3 diary.py delete 1
 ```
 
 如果希望把数据写入当前目录的测试文件：
 
 ```bash
-python diary.py --db ./demo_entries.json add --title "测试" 这是一条测试日记
+python3 diary.py --db ./demo_entries.json add --title "测试" 这是一条测试日记
 ```
 
 ## 运行测试
 
 ```bash
-python -m unittest discover -s tests
+python3 -m unittest discover -s tests
 ```
