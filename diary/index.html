@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>简易日记</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>简易日记</h1>
+      <p class="tagline">写在本地浏览器，数据保存在本机</p>
+    </header>
+
+    <main class="main">
+      <section class="editor card" aria-label="写日记">
+        <h2>写一篇</h2>
+        <form id="entry-form" class="form">
+          <label class="field">
+            <span>日期</span>
+            <input type="date" id="entry-date" required />
+          </label>
+          <label class="field">
+            <span>标题（可选）</span>
+            <input type="text" id="entry-title" placeholder="例如：今天的小事" maxlength="200" />
+          </label>
+          <label class="field field-grow">
+            <span>正文</span>
+            <textarea id="entry-body" rows="8" placeholder="记录今天的心情与想法…" required></textarea>
+          </label>
+          <div class="form-actions">
+            <button type="submit" class="btn primary" id="save-btn">保存</button>
+            <button type="button" class="btn ghost" id="cancel-edit" hidden>取消编辑</button>
+          </div>
+        </form>
+      </section>
+
+      <section class="list-section card" aria-label="日记列表">
+        <div class="list-header">
+          <h2>过往记录</h2>
+          <input type="search" id="search" class="search" placeholder="搜索标题或正文…" autocomplete="off" />
+        </div>
+        <ul id="entry-list" class="entry-list"></ul>
+        <p id="empty-hint" class="empty-hint">还没有日记，先在左侧写一条吧。</p>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <small>数据保存在浏览器 localStorage，清除站点数据会一并删除。</small>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
