@@ -49,6 +49,16 @@ export function CharactersView({ initialId }: { initialId?: string | null }) {
     (id: string, patch: Partial<Character>) =>
       updateCurrent((p) => ({
         characters: p.characters.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+        // 所属势力变动时同步势力页的成员列表
+        factions:
+          patch.factionIds === undefined
+            ? p.factions
+            : p.factions.map((f) => {
+                const belongs = patch.factionIds!.includes(f.id);
+                const has = f.memberIds.includes(id);
+                if (belongs === has) return f;
+                return { ...f, memberIds: belongs ? [...f.memberIds, id] : f.memberIds.filter((m) => m !== id) };
+              }),
       })),
     [updateCurrent],
   );

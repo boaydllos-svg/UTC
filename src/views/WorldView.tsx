@@ -10,10 +10,13 @@ export function WorldView({ initialId }: { initialId?: string | null }) {
   const project = useCurrentProject();
   const { updateCurrent } = useStore();
   const initialEntry = project.worldEntries.find((e) => e.id === initialId);
-  const [categoryId, setCategoryId] = useState<string>(initialEntry?.categoryId ?? 'all');
+  const [rawCategoryId, setCategoryId] = useState<string>(initialEntry?.categoryId ?? 'all');
   const [selectedId, setSelectedId] = useState<string | null>(initialId ?? null);
   const [query, setQuery] = useState('');
   const [managing, setManaging] = useState(false);
+  // 选中的分类可能在分类管理器中被删除，此时回退到“全部”，避免新建词条落到不存在的分类
+  const categoryId =
+    rawCategoryId === 'all' || project.worldCategories.some((c) => c.id === rawCategoryId) ? rawCategoryId : 'all';
 
   const entries = useMemo(
     () =>

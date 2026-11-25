@@ -18,7 +18,7 @@ interface Route {
 }
 
 export default function App() {
-  const { loading, projects, currentProject, selectProject, saving } = useStore();
+  const { loading, projects, currentProject, selectProject, saving, saveError, retrySave } = useStore();
   const [route, setRoute] = useState<Route>({ module: 'projects', focusId: null, nonce: 0 });
 
   const go = useCallback((module: ModuleKey, focusId: string | null = null) => {
@@ -84,10 +84,20 @@ export default function App() {
           })}
         </ul>
 
-        <div className="sidebar-footer muted small">{saving ? '保存中…' : '已保存到本机'}</div>
+        <div className="sidebar-footer muted small">
+          {saving ? '保存中…' : saveError ? <span className="danger">保存失败，有未落盘的修改</span> : '已保存到本机'}
+        </div>
       </nav>
 
       <main className="content">
+        {saveError && (
+          <div className="banner banner-danger" role="alert">
+            <span>{saveError}</span>
+            <button className="btn btn-sm" onClick={retrySave}>
+              立即重试
+            </button>
+          </div>
+        )}
         {active === 'projects' && <ProjectsView onOpen={() => go('characters')} />}
         {currentProject && active === 'characters' && <CharactersView key={viewKey} initialId={route.focusId} />}
         {currentProject && active === 'world' && <WorldView key={viewKey} initialId={route.focusId} />}

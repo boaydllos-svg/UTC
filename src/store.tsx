@@ -36,11 +36,23 @@ interface StoreValue {
   exportProjects: (ids?: string[]) => string;
   importProjects: (json: string) => Promise<{ imported: number; replaced: number }>;
   saving: boolean;
+  /** 最近一次写入 IndexedDB 失败的提示；成功后清空 */
+  saveError: string | null;
+  /** 立即重试写入未保存的数据 */
+  retrySave: () => void;
 }
 
 const StoreContext = createContext<StoreValue | null>(null);
 
 const SAVE_DEBOUNCE_MS = 400;
+const RETRY_BASE_MS = 2000;
+const RETRY_MAX_MS = 30000;
+
+function describeError(err: unknown): string {
+  if (err instanceof DOMException && err.name === 'QuotaExceededError') return '浏览器存储空间不足';
+  if (err instanceof Error) return err.message || err.name;
+  return String(err);
+}
 
 export function StoreProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -48,8 +60,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
+  const [saveError, setSaveError] = useState<string | null>(null);
+
   const dirty = useRef<Map<string, Project>>(new Map());
   const timer = useRef<number | null>(null);
+  const retryCount = useRef(0);
+  const flushRef = useRef<() => Promise<void>>(async () => {});
 
   useEffect(() => {
     let cancelled = false;
@@ -74,21 +90,43 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSaving(true);
     try {
       await saveProjects(batch);
+      retryCount.current = 0;
+      setSaveError(null);
     } catch (err) {
       console.error('保存失败', err);
+      // 写入失败：把未落盘的数据放回队列（若期间已有更新的编辑则以新的为准），稍后重试
+      for (const p of batch) {
+        if (!dirty.current.has(p.id)) dirty.current.set(p.id, p);
+      }
+      retryCount.current += 1;
+      const delay = Math.min(RETRY_BASE_MS * 2 ** (retryCount.current - 1), RETRY_MAX_MS);
+      setSaveError(
+        `保存到本地数据库失败（${describeError(err)}），${Math.round(delay / 1000)} 秒后自动重试；建议立即导出 JSON 备份。`,
+      );
+      if (timer.current) window.clearTimeout(timer.current);
+      timer.current = window.setTimeout(() => void flushRef.current(), delay);
     } finally {
       setSaving(false);
     }
   }, []);
+  useEffect(() => {
+    flushRef.current = flush;
+  }, [flush]);
 
   const scheduleSave = useCallback(
     (project: Project) => {
       dirty.current.set(project.id, project);
       if (timer.current) window.clearTimeout(timer.current);
-      timer.current = window.setTimeout(flush, SAVE_DEBOUNCE_MS);
+      timer.current = window.setTimeout(() => void flush(), SAVE_DEBOUNCE_MS);
     },
     [flush],
   );
+
+  const retrySave = useCallback(() => {
+    if (timer.current) window.clearTimeout(timer.current);
+    retryCount.current = 0;
+    void flush();
+  }, [flush]);
 
   useEffect(() => {
     const handler = () => {
@@ -223,6 +261,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     exportProjects,
     importProjects,
     saving,
+    saveError,
+    retrySave,
   };
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;

@@ -20,7 +20,7 @@
 
 ## 运行方式
 
-要求 Node.js ≥ 18。
+要求 Node.js `^20.19.0 || >=22.12.0`（Vite 8 的最低版本要求，推荐 Node 22 LTS）。
 
 ```bash
 npm install        # 安装依赖
